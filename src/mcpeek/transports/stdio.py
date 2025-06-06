@@ -124,8 +124,17 @@ class STDIOTransport(BaseTransport):
 
             self.logger.debug(f"Received STDIO response: {response}")
 
-            # Validate response structure
-            validate_json_rpc_message(response)
+            # Log the raw response for debugging
+            self.logger.debug(f"Raw response structure: {list(response.keys()) if isinstance(response, dict) else type(response)}")
+
+            # Validate response structure - but be more lenient for incoming responses
+            try:
+                validate_json_rpc_message(response)
+            except Exception as e:
+                self.logger.warning(f"Response validation failed: {e}. Response: {response}")
+                # For incoming responses, we can be more lenient - just ensure it's a dict
+                if not isinstance(response, dict):
+                    raise ConnectionError(f"Invalid response format: {type(response)}")
 
             return response
 
@@ -183,11 +192,14 @@ class STDIOTransport(BaseTransport):
         if not self.process or not self._connected:
             raise ConnectionError("Transport not connected")
 
+        # Create unique request ID for each request
+        req_id = request_id or create_request_id()
+
         # Create request message
         message = {
             "jsonrpc": "2.0",
             "method": method,
-            "id": request_id or create_request_id()
+            "id": req_id
         }
 
         if params is not None:
@@ -196,15 +208,25 @@ class STDIOTransport(BaseTransport):
         # Send message
         await self.send_message(message)
 
-        # Wait for response
-        response = await self.receive_message()
+        # Wait for response with matching ID
+        while True:
+            response = await self.receive_message()
 
-        # Validate response
-        if "error" in response:
-            error = response["error"]
-            raise ProtocolError(f"MCP Error {error.get('code', 'unknown')}: {error.get('message', 'Unknown error')}")
+            # Skip empty or invalid responses
+            if not response or not isinstance(response, dict):
+                self.logger.warning(f"Skipping invalid response: {response}")
+                continue
 
-        return response
+            # Check if this response matches our request ID
+            if response.get("id") == req_id:
+                # Validate response
+                if "error" in response:
+                    error = response["error"]
+                    raise ProtocolError(f"MCP Error {error.get('code', 'unknown')}: {error.get('message', 'Unknown error')}")
+                return response
+            else:
+                # This response is for a different request, log and continue waiting
+                self.logger.debug(f"Received response for different request ID. Expected: {req_id}, Got: {response.get('id')}")
 
     def __del__(self):
         """Cleanup on deletion."""

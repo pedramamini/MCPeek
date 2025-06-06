@@ -119,7 +119,8 @@ def extract_error_details(error: Exception) -> Dict[str, Any]:
 
 def create_request_id() -> str:
     """Create a unique request ID for JSON-RPC messages."""
-    return f"mcpeek-{int(time.time() * 1000)}"
+    import random
+    return f"mcpeek-{int(time.time() * 1000)}-{random.randint(1000, 9999)}"
 
 
 def merge_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:

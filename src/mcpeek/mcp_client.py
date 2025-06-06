@@ -52,7 +52,7 @@ class MCPClient:
             self._server_capabilities = result.get("capabilities", {})
 
             # Send initialized notification
-            await self.transport.send_notification("initialized")
+            await self.transport.send_notification("notifications/initialized")
 
             self._initialized = True
             self.logger.info("MCP connection initialized successfully")
@@ -82,10 +82,21 @@ class MCPClient:
             self.logger.debug("Requesting tools list")
             response = await self.transport.send_request("tools/list")
 
-            if "result" not in response:
-                raise ProtocolError("Tools list response missing result")
+            # Handle empty or malformed responses gracefully
+            if not response or not isinstance(response, dict):
+                self.logger.warning("Received empty or invalid response for tools/list")
+                return []
 
-            tools = response["result"].get("tools", [])
+            if "result" not in response:
+                self.logger.warning("Tools list response missing result field")
+                return []
+
+            result = response["result"]
+            if not isinstance(result, dict):
+                self.logger.warning("Tools list result is not a dictionary")
+                return []
+
+            tools = result.get("tools", [])
             self.logger.info(f"Retrieved {len(tools)} tools")
             return tools
 
@@ -102,10 +113,21 @@ class MCPClient:
             self.logger.debug("Requesting resources list")
             response = await self.transport.send_request("resources/list")
 
-            if "result" not in response:
-                raise ProtocolError("Resources list response missing result")
+            # Handle empty or malformed responses gracefully
+            if not response or not isinstance(response, dict):
+                self.logger.warning("Received empty or invalid response for resources/list")
+                return []
 
-            resources = response["result"].get("resources", [])
+            if "result" not in response:
+                self.logger.warning("Resources list response missing result field")
+                return []
+
+            result = response["result"]
+            if not isinstance(result, dict):
+                self.logger.warning("Resources list result is not a dictionary")
+                return []
+
+            resources = result.get("resources", [])
             self.logger.info(f"Retrieved {len(resources)} resources")
             return resources
 
@@ -122,10 +144,21 @@ class MCPClient:
             self.logger.debug("Requesting prompts list")
             response = await self.transport.send_request("prompts/list")
 
-            if "result" not in response:
-                raise ProtocolError("Prompts list response missing result")
+            # Handle empty or malformed responses gracefully
+            if not response or not isinstance(response, dict):
+                self.logger.warning("Received empty or invalid response for prompts/list")
+                return []
 
-            prompts = response["result"].get("prompts", [])
+            if "result" not in response:
+                self.logger.warning("Prompts list response missing result field")
+                return []
+
+            result = response["result"]
+            if not isinstance(result, dict):
+                self.logger.warning("Prompts list result is not a dictionary")
+                return []
+
+            prompts = result.get("prompts", [])
             self.logger.info(f"Retrieved {len(prompts)} prompts")
             return prompts
 
