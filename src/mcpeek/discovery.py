@@ -50,17 +50,31 @@ class DiscoveryEngine:
                 self.logger.warning(f"Failed to discover prompts: {prompts}")
                 prompts = []
 
-            # Create discovery result
+            # Update server capabilities based on actual discovery results
+            # Only build capabilities from successful discoveries (not exceptions)
+            discovered_capabilities = {}
+
+            # Convert results to proper types, handling exceptions
+            from typing import cast
+            final_tools = cast(List[ToolInfo], tools) if not isinstance(tools, Exception) else []
+            final_resources = cast(List[ResourceInfo], resources) if not isinstance(resources, Exception) else []
+            final_prompts = cast(List[PromptInfo], prompts) if not isinstance(prompts, Exception) else []
+
+            discovered_capabilities['tools'] = {tool.name: {'description': tool.description} for tool in final_tools} if final_tools else {}
+            discovered_capabilities['resources'] = {resource.uri: {'name': resource.name, 'description': resource.description} for resource in final_resources} if final_resources else {}
+            discovered_capabilities['prompts'] = {prompt.name: {'description': prompt.description} for prompt in final_prompts} if final_prompts else {}
+
+            # Create discovery result with discovered capabilities
             result = DiscoveryResult(
                 server_info=server_info,
-                tools=tools,
-                resources=resources,
-                prompts=prompts,
-                capabilities=self.client.server_capabilities,
+                tools=final_tools,
+                resources=final_resources,
+                prompts=final_prompts,
+                capabilities=discovered_capabilities,
                 verbosity_level=self.verbosity
             )
 
-            self.logger.info(f"Discovery complete: {len(tools)} tools, {len(resources)} resources, {len(prompts)} prompts")
+            self.logger.info(f"Discovery complete: {len(final_tools)} tools, {len(final_resources)} resources, {len(final_prompts)} prompts")
             return result
 
         except Exception as e:
@@ -87,7 +101,13 @@ class DiscoveryEngine:
                 tool_info = self._process_tool_data(tool_data)
                 tools.append(tool_info)
 
-            self.logger.debug(f"Cataloged {len(tools)} tools")
+            # DEBUG: Compare discovered tools vs capabilities
+            server_capabilities = self.client.server_capabilities
+            tools_capability = server_capabilities.get('tools', {})
+            self.logger.debug(f"Cataloged {len(tools)} tools via list_tools()")
+            self.logger.debug(f"Server capabilities show tools: {tools_capability}")
+            self.logger.debug(f"Tool names discovered: {[tool.name for tool in tools]}")
+
             return tools
 
         except Exception as e:
@@ -104,7 +124,13 @@ class DiscoveryEngine:
                 resource_info = self._process_resource_data(resource_data)
                 resources.append(resource_info)
 
-            self.logger.debug(f"Cataloged {len(resources)} resources")
+            # DEBUG: Compare discovered resources vs capabilities
+            server_capabilities = self.client.server_capabilities
+            resources_capability = server_capabilities.get('resources', {})
+            self.logger.debug(f"Cataloged {len(resources)} resources via list_resources()")
+            self.logger.debug(f"Server capabilities show resources: {resources_capability}")
+            self.logger.debug(f"Resource URIs discovered: {[resource.uri for resource in resources]}")
+
             return resources
 
         except Exception as e:

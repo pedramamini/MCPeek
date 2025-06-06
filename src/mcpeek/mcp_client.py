@@ -51,6 +51,10 @@ class MCPClient:
             result = response["result"]
             self._server_capabilities = result.get("capabilities", {})
 
+            # DEBUG: Log the full initialize response to diagnose capability reporting
+            self.logger.debug(f"Initialize response: {response}")
+            self.logger.debug(f"Server capabilities from initialize: {self._server_capabilities}")
+
             # Send initialized notification
             await self.transport.send_notification("notifications/initialized")
 
