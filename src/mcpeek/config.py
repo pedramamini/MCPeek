@@ -108,6 +108,7 @@ class ConfigManager:
             'timeout': 30.0,
             'log_level': 'INFO',
             'discover': False,
+            'tool_tickle': False,
             'stdin': False,
         }
 
@@ -146,6 +147,7 @@ class ConfigManager:
         arg_mappings = {
             'endpoint': 'endpoint',
             'discover': 'discover',
+            'tool_tickle': 'tool_tickle',
             'tool': 'tool',
             'resource': 'resource',
             'input': 'input',
@@ -213,6 +215,7 @@ class ConfigManager:
         return {
             'verbosity': config.get('verbosity', 0),
             'discover': config.get('discover', False),
+            'tool_tickle': config.get('tool_tickle', False),
         }
 
     def get_execution_config(self, config: Dict[str, Any]) -> Dict[str, Any]:

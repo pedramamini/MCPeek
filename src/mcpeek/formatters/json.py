@@ -34,6 +34,10 @@ class JSONFormatter(BaseFormatter):
         # Include version information if available
         if result.version_info:
             output["version_info"] = result.version_info
+            
+        # Include tool exploration results if available
+        if result.tool_exploration:
+            output["tool_exploration"] = result.tool_exploration
 
         return self._format_json(output)
 

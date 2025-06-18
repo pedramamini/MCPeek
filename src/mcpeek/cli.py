@@ -43,6 +43,9 @@ Examples:
   mcpeek --discover <endpoint> -v          # Brief info
   mcpeek --discover <endpoint> -vv         # Detailed info
   mcpeek --discover <endpoint> -vvv        # Full schema info
+  
+  # Discovery with tool exploration
+  mcpeek --discover <endpoint> --tool-tickle  # Also call safe tools during discovery
 
   # Execute specific tools
   mcpeek --endpoint <endpoint> --tool <tool_name> --input '{"param": "value"}'
@@ -73,6 +76,12 @@ Examples:
             "--discover",
             action="store_true",
             help="Discover and catalog endpoint capabilities"
+        )
+        
+        parser.add_argument(
+            "--tool-tickle",
+            action="store_true",
+            help="During discovery, actually call tools matching safe patterns (requires --discover)"
         )
 
         # Execution options
@@ -186,6 +195,10 @@ Examples:
         # Verbosity validation
         if args.verbosity > 3:
             raise ValidationError("Maximum verbosity level is 3 (-vvv)")
+        
+        # Tool tickle validation
+        if args.tool_tickle and not args.discover:
+            raise ValidationError("--tool-tickle requires --discover mode")
 
     async def execute_command(self, args: argparse.Namespace) -> int:
         """Execute the requested command and return exit code."""
@@ -279,7 +292,8 @@ Examples:
     async def _execute_discovery(self, client: MCPClient, config: Dict[str, Any]):
         """Execute discovery operation."""
         verbosity = config.get('verbosity', 0)
-        discovery_engine = DiscoveryEngine(client, verbosity)
+        tool_tickle = config.get('tool_tickle', False)
+        discovery_engine = DiscoveryEngine(client, verbosity, tool_tickle)
         return await discovery_engine.discover_endpoint()
 
     async def _execute_tool(self, client: MCPClient, config: Dict[str, Any]):

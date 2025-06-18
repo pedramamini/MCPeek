@@ -53,6 +53,12 @@ class TableFormatter(BaseFormatter):
         if result.prompts:
             prompts_table = self._create_prompts_table(result.prompts, result.verbosity_level)
             console.print(Panel(prompts_table, title="Available Prompts", border_style="magenta"))
+            console.print()
+
+        # Tool Exploration Results
+        if result.tool_exploration:
+            exploration_panel = self._create_tool_exploration_panel(result.tool_exploration)
+            console.print(Panel(exploration_panel, title="Tool Exploration Results", border_style="cyan"))
 
         return output.getvalue()
 
@@ -345,3 +351,87 @@ class TableFormatter(BaseFormatter):
             content_text += f"\n[bold]Binary Content:[/bold] {len(content['blob'])} bytes"
 
         return content_text.strip()
+    
+    def _create_tool_exploration_panel(self, exploration_results: Dict[str, Any]) -> str:
+        """Create tool exploration results panel."""
+        if not exploration_results:
+            return "[dim]No tool exploration performed[/dim]"
+        
+        if "error" in exploration_results:
+            return f"[red]Tool exploration failed: {exploration_results['error']}[/red]"
+        
+        panel_text = ""
+        successful_tools = []
+        failed_tools = []
+        
+        # Categorize results
+        for tool_name, result in exploration_results.items():
+            if isinstance(result, dict):
+                if result.get("status") == "success":
+                    successful_tools.append((tool_name, result))
+                else:
+                    failed_tools.append((tool_name, result))
+        
+        # Summary
+        total_explored = len(exploration_results)
+        success_count = len(successful_tools)
+        failed_count = len(failed_tools)
+        
+        panel_text += f"[bold green]Exploration Summary[/bold green]\n"
+        panel_text += f"Total tools explored: {total_explored}\n"
+        panel_text += f"Successful calls: [green]{success_count}[/green]\n"
+        panel_text += f"Failed calls: [red]{failed_count}[/red]\n\n"
+        
+        # Show successful explorations
+        if successful_tools:
+            panel_text += "[bold green]✓ Successful Explorations[/bold green]\n"
+            for tool_name, result in successful_tools:
+                panel_text += f"  [green]•[/green] [bold]{tool_name}[/bold]\n"
+                
+                # Show a preview of the result if it's not too complex
+                tool_result = result.get("result", {})
+                if isinstance(tool_result, dict):
+                    # Show first few keys or a summary
+                    if "content" in tool_result:
+                        content = tool_result["content"]
+                        if isinstance(content, list) and len(content) > 0:
+                            panel_text += f"    Result: {len(content)} items\n"
+                        else:
+                            preview = str(content)[:100]
+                            if len(str(content)) > 100:
+                                preview += "..."
+                            panel_text += f"    Result: {preview}\n"
+                    else:
+                        # Show a few key-value pairs
+                        preview_items = list(tool_result.items())[:2]
+                        if preview_items:
+                            for key, value in preview_items:
+                                value_str = str(value)[:50]
+                                if len(str(value)) > 50:
+                                    value_str += "..."
+                                panel_text += f"    {key}: {value_str}\n"
+                elif isinstance(tool_result, list):
+                    panel_text += f"    Result: List with {len(tool_result)} items\n"
+                else:
+                    preview = str(tool_result)[:100]
+                    if len(str(tool_result)) > 100:
+                        preview += "..."
+                    panel_text += f"    Result: {preview}\n"
+                
+                panel_text += "\n"
+        
+        # Show failed explorations
+        if failed_tools:
+            panel_text += "[bold red]✗ Failed Explorations[/bold red]\n"
+            for tool_name, result in failed_tools:
+                panel_text += f"  [red]•[/red] [bold]{tool_name}[/bold]\n"
+                error_msg = result.get("error", "Unknown error")
+                status = result.get("status", "error")
+                
+                if status == "failed_empty_params":
+                    panel_text += f"    [yellow]Requires parameters[/yellow]: {error_msg[:100]}\n"
+                else:
+                    panel_text += f"    [red]Error[/red]: {error_msg[:100]}\n"
+                panel_text += "\n"
+        
+        return panel_text.strip()

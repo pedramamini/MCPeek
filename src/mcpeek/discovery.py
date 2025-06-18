@@ -1,6 +1,7 @@
 """Discovery engine for MCP endpoint capabilities."""
 
 import asyncio
+import re
 from typing import List, Dict, Any
 
 from .mcp_client import MCPClient
@@ -11,11 +12,15 @@ from .utils.helpers import validate_verbosity_level
 
 class DiscoveryEngine:
     """Discovers and catalogs MCP endpoint capabilities."""
+    
+    # Default regex pattern for safe tools to tickle
+    SAFE_TOOL_PATTERN = re.compile(r".*(list|status|help).*", re.IGNORECASE)
 
-    def __init__(self, client: MCPClient, verbosity: int = 0):
-        """Initialize discovery engine with client and verbosity level."""
+    def __init__(self, client: MCPClient, verbosity: int = 0, tool_tickle: bool = False):
+        """Initialize discovery engine with client, verbosity level, and tool exploration option."""
         self.client = client
         self.verbosity = validate_verbosity_level(verbosity)
+        self.tool_tickle = tool_tickle
         self.logger = get_logger()
 
     async def discover_endpoint(self) -> DiscoveryResult:
@@ -49,6 +54,17 @@ class DiscoveryEngine:
             if isinstance(prompts, Exception):
                 self.logger.warning(f"Failed to discover prompts: {prompts}")
                 prompts = []
+            
+            # Perform tool exploration if enabled
+            tool_exploration_results = None
+            if self.tool_tickle and tools and not isinstance(tools, Exception):
+                try:
+                    from typing import cast
+                    safe_tools = cast(List[ToolInfo], tools)
+                    tool_exploration_results = await self.explore_tools(safe_tools)
+                except Exception as e:
+                    self.logger.warning(f"Tool exploration failed: {e}")
+                    tool_exploration_results = {"error": str(e)}
 
             # Update server capabilities based on actual discovery results
             # Only build capabilities from successful discoveries (not exceptions)
@@ -79,7 +95,8 @@ class DiscoveryEngine:
                 prompts=final_prompts,
                 capabilities=discovered_capabilities,
                 verbosity_level=self.verbosity,
-                version_info=version_info
+                version_info=version_info,
+                tool_exploration=tool_exploration_results
             )
 
             self.logger.info(f"Discovery complete: {len(final_tools)} tools, {len(final_resources)} resources, {len(final_prompts)} prompts")
@@ -301,3 +318,101 @@ class DiscoveryEngine:
             lines.append("")
 
         return "\n".join(lines)
+
+    async def explore_tools(self, tools: List[ToolInfo]) -> Dict[str, Any]:
+        """Explore tools by actually calling safe ones."""
+        if not self.tool_tickle or not tools:
+            return {}
+        
+        self.logger.info(f"Starting tool exploration with {len(tools)} total tools")
+        exploration_results = {}
+        
+        # Filter tools that match the safe pattern
+        safe_tools = self.filter_safe_tools(tools)
+        self.logger.info(f"Found {len(safe_tools)} safe tools to tickle: {[tool.name for tool in safe_tools]}")
+        
+        if not safe_tools:
+            self.logger.info("No safe tools found to tickle")
+            return {}
+        
+        self.logger.info(f"Starting to tickle {len(safe_tools)} tools...")
+        
+        # Execute safe tools in parallel with error handling
+        exploration_tasks = []
+        for i, tool in enumerate(safe_tools, 1):
+            task = asyncio.create_task(self._explore_single_tool(tool, i, len(safe_tools)))
+            exploration_tasks.append(task)
+        
+        # Wait for all explorations to complete
+        results = await asyncio.gather(*exploration_tasks, return_exceptions=True)
+        
+        # Process results and handle exceptions
+        successful_explorations = 0
+        failed_explorations = 0
+        
+        for i, result in enumerate(results):
+            tool_name = safe_tools[i].name
+            if isinstance(result, Exception):
+                failed_explorations += 1
+                self.logger.warning(f"Failed to explore tool {tool_name}: {result}")
+                exploration_results[tool_name] = {
+                    "status": "error",
+                    "error": str(result)
+                }
+            else:
+                if result.get("status") == "success":
+                    successful_explorations += 1
+                else:
+                    failed_explorations += 1
+                exploration_results[tool_name] = result
+        
+        self.logger.info(f"Tool exploration complete: {successful_explorations} successful, {failed_explorations} failed out of {len(safe_tools)} tools")
+        return exploration_results
+    
+    def filter_safe_tools(self, tools: List[ToolInfo]) -> List[ToolInfo]:
+        """Filter tools that match the safe pattern."""
+        safe_tools = []
+        for tool in tools:
+            if self.SAFE_TOOL_PATTERN.match(tool.name):
+                safe_tools.append(tool)
+                self.logger.debug(f"Tool {tool.name} matches safe pattern")
+            else:
+                self.logger.debug(f"Tool {tool.name} does not match safe pattern")
+        
+        return safe_tools
+    
+    async def _explore_single_tool(self, tool: ToolInfo, current_index: int = 0, total_tools: int = 0) -> Dict[str, Any]:
+        """Explore a single tool by calling it with minimal/no parameters."""
+        try:
+            if total_tools > 0:
+                self.logger.info(f"Tickling tool {current_index}/{total_tools}: {tool.name}")
+            else:
+                self.logger.info(f"Tickling tool: {tool.name}")
+            
+            # Try to call the tool with no parameters first
+            # Most list/status/help tools should work without parameters
+            try:
+                result = await self.client.call_tool(tool.name, {})
+                self.logger.info(f"✓ Tool {tool.name} responded successfully")
+                return {
+                    "status": "success",
+                    "result": result,
+                    "called_with": {}
+                }
+            except Exception as e:
+                # If calling with no parameters fails, we could try to analyze
+                # the tool schema and provide minimal required parameters
+                # For now, just report the failure
+                self.logger.warning(f"✗ Tool {tool.name} failed with empty parameters: {e}")
+                return {
+                    "status": "failed_empty_params",
+                    "error": str(e),
+                    "called_with": {}
+                }
+                
+        except Exception as e:
+            self.logger.error(f"✗ Unexpected error exploring tool {tool.name}: {e}")
+            return {
+                "status": "error",
+                "error": str(e)
+            }
