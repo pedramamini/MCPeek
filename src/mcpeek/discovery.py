@@ -65,7 +65,11 @@ class DiscoveryEngine:
             discovered_capabilities['prompts'] = {prompt.name: {'description': prompt.description} for prompt in final_prompts} if final_prompts else {}
 
             # Get version information from client
-            version_info = self.client.get_server_version_summary()
+            try:
+                version_info = self.client.get_server_version_summary()
+            except Exception as e:
+                self.logger.warning(f"Failed to get version information: {e}")
+                version_info = {"status": "detection_failed", "error": str(e)}
 
             # Create discovery result with discovered capabilities
             result = DiscoveryResult(

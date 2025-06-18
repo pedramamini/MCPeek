@@ -56,14 +56,12 @@ class MCPClient:
             self._server_capabilities = result.get("capabilities", {})
             self._server_info = result.get("serverInfo", {})
 
-            # DEBUG: Log the full initialize response to diagnose capability reporting
-            self.logger.debug(f"Initialize response: {response}")
-            self.logger.debug(f"Server capabilities from initialize: {self._server_capabilities}")
-            self.logger.debug(f"Server info from initialize: {self._server_info}")
+            self.logger.debug(f"Server info: {self._server_info.get('name', 'unknown')} v{self._server_info.get('version', 'unknown')}")
+            self.logger.debug(f"Server capabilities: {list(self._server_capabilities.keys())}")
 
             # Perform version detection
             server_info_for_detection = {
-                "protocol_version": init_params["protocolVersion"],
+                "protocol_version": result.get("protocolVersion", init_params["protocolVersion"]),
                 "server_name": self._server_info.get("name", "unknown"),
                 "server_version": self._server_info.get("version", "unknown")
             }
