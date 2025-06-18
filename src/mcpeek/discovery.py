@@ -324,35 +324,49 @@ class DiscoveryEngine:
         if not self.tool_tickle or not tools:
             return {}
         
-        self.logger.info(f"Starting tool exploration with {len(tools)} tools")
+        self.logger.info(f"Starting tool exploration with {len(tools)} total tools")
         exploration_results = {}
         
         # Filter tools that match the safe pattern
         safe_tools = self.filter_safe_tools(tools)
-        self.logger.info(f"Found {len(safe_tools)} safe tools to explore: {[tool.name for tool in safe_tools]}")
+        self.logger.info(f"Found {len(safe_tools)} safe tools to tickle: {[tool.name for tool in safe_tools]}")
+        
+        if not safe_tools:
+            self.logger.info("No safe tools found to tickle")
+            return {}
+        
+        self.logger.info(f"Starting to tickle {len(safe_tools)} tools...")
         
         # Execute safe tools in parallel with error handling
         exploration_tasks = []
-        for tool in safe_tools:
-            task = asyncio.create_task(self._explore_single_tool(tool))
+        for i, tool in enumerate(safe_tools, 1):
+            task = asyncio.create_task(self._explore_single_tool(tool, i, len(safe_tools)))
             exploration_tasks.append(task)
         
         # Wait for all explorations to complete
         results = await asyncio.gather(*exploration_tasks, return_exceptions=True)
         
         # Process results and handle exceptions
+        successful_explorations = 0
+        failed_explorations = 0
+        
         for i, result in enumerate(results):
             tool_name = safe_tools[i].name
             if isinstance(result, Exception):
+                failed_explorations += 1
                 self.logger.warning(f"Failed to explore tool {tool_name}: {result}")
                 exploration_results[tool_name] = {
                     "status": "error",
                     "error": str(result)
                 }
             else:
+                if result.get("status") == "success":
+                    successful_explorations += 1
+                else:
+                    failed_explorations += 1
                 exploration_results[tool_name] = result
         
-        self.logger.info(f"Tool exploration complete: explored {len(exploration_results)} tools")
+        self.logger.info(f"Tool exploration complete: {successful_explorations} successful, {failed_explorations} failed out of {len(safe_tools)} tools")
         return exploration_results
     
     def filter_safe_tools(self, tools: List[ToolInfo]) -> List[ToolInfo]:
@@ -367,15 +381,19 @@ class DiscoveryEngine:
         
         return safe_tools
     
-    async def _explore_single_tool(self, tool: ToolInfo) -> Dict[str, Any]:
+    async def _explore_single_tool(self, tool: ToolInfo, current_index: int = 0, total_tools: int = 0) -> Dict[str, Any]:
         """Explore a single tool by calling it with minimal/no parameters."""
         try:
-            self.logger.debug(f"Exploring tool: {tool.name}")
+            if total_tools > 0:
+                self.logger.info(f"Tickling tool {current_index}/{total_tools}: {tool.name}")
+            else:
+                self.logger.info(f"Tickling tool: {tool.name}")
             
             # Try to call the tool with no parameters first
             # Most list/status/help tools should work without parameters
             try:
                 result = await self.client.call_tool(tool.name, {})
+                self.logger.info(f"✓ Tool {tool.name} responded successfully")
                 return {
                     "status": "success",
                     "result": result,
@@ -385,7 +403,7 @@ class DiscoveryEngine:
                 # If calling with no parameters fails, we could try to analyze
                 # the tool schema and provide minimal required parameters
                 # For now, just report the failure
-                self.logger.debug(f"Tool {tool.name} failed with empty parameters: {e}")
+                self.logger.warning(f"✗ Tool {tool.name} failed with empty parameters: {e}")
                 return {
                     "status": "failed_empty_params",
                     "error": str(e),
@@ -393,7 +411,7 @@ class DiscoveryEngine:
                 }
                 
         except Exception as e:
-            self.logger.error(f"Unexpected error exploring tool {tool.name}: {e}")
+            self.logger.error(f"✗ Unexpected error exploring tool {tool.name}: {e}")
             return {
                 "status": "error",
                 "error": str(e)
