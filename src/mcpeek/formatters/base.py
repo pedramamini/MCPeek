@@ -59,6 +59,7 @@ class DiscoveryResult:
     capabilities: Dict[str, Any]
     verbosity_level: int = 0
     version_info: Optional[Dict[str, Any]] = None
+    tool_exploration: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
         if not isinstance(self.tools, list):
