@@ -14,6 +14,7 @@ from .discovery import DiscoveryEngine
 from .execution import ExecutionEngine
 from .formatters.json import JSONFormatter
 from .formatters.table import TableFormatter
+from .formatters.markdown import MarkdownFormatter
 from .utils.exceptions import MCPeekException, ValidationError, ConnectionError
 from .utils.logging import logging_manager, get_logger
 from .utils.helpers import parse_endpoint_url
@@ -57,6 +58,7 @@ Examples:
   # Output formatting
   mcpeek --discover <endpoint> --format json
   mcpeek --discover <endpoint> --format table
+  mcpeek --discover <endpoint> --format markdown
 
   # Authentication
   mcpeek --endpoint <endpoint> --api-key <key>
@@ -115,7 +117,7 @@ Examples:
         # Output formatting
         parser.add_argument(
             "--format",
-            choices=["json", "table"],
+            choices=["json", "table", "markdown"],
             default="table",
             help="Output format (default: table)"
         )
@@ -336,5 +338,7 @@ Examples:
 
         if format_type == 'json':
             return JSONFormatter(pretty_print=True)
+        elif format_type == 'markdown':
+            return MarkdownFormatter()
         else:
             return TableFormatter(use_colors=True)
