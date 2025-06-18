@@ -32,33 +32,35 @@ class TableFormatter(BaseFormatter):
         console.print()
 
         # Summary
-        summary_text = f"[bold green]Discovery Summary[/bold green]\n"
-        summary_text += f"Tools: {len(result.tools)} | Resources: {len(result.resources)} | Prompts: {len(result.prompts)}"
-        console.print(Panel(summary_text, title="Summary", border_style="green"))
+        summary_text = f"[bold green]📊 Discovery Summary[/bold green]\n"
+        summary_text += f"🛠️  Tools: [bold cyan]{len(result.tools)}[/bold cyan] | "
+        summary_text += f"📄 Resources: [bold yellow]{len(result.resources)}[/bold yellow] | "
+        summary_text += f"💬 Prompts: [bold magenta]{len(result.prompts)}[/bold magenta]"
+        console.print(Panel(summary_text, title="📊 Summary", border_style="green"))
         console.print()
 
         # Tools Table
         if result.tools:
             tools_table = self._create_tools_table(result.tools, result.verbosity_level)
-            console.print(Panel(tools_table, title="Available Tools", border_style="blue"))
+            console.print(Panel(tools_table, title="🛠️ Available Tools", border_style="blue"))
             console.print()
 
         # Resources Table
         if result.resources:
             resources_table = self._create_resources_table(result.resources, result.verbosity_level)
-            console.print(Panel(resources_table, title="Available Resources", border_style="yellow"))
+            console.print(Panel(resources_table, title="📄 Available Resources", border_style="yellow"))
             console.print()
 
         # Prompts Table
         if result.prompts:
             prompts_table = self._create_prompts_table(result.prompts, result.verbosity_level)
-            console.print(Panel(prompts_table, title="Available Prompts", border_style="magenta"))
+            console.print(Panel(prompts_table, title="💬 Available Prompts", border_style="magenta"))
             console.print()
 
         # Tool Exploration Results
         if result.tool_exploration:
             exploration_panel = self._create_tool_exploration_panel(result.tool_exploration)
-            console.print(Panel(exploration_panel, title="Tool Exploration Results", border_style="cyan"))
+            console.print(Panel(exploration_panel, title="🔍 Tool Exploration Results", border_style="cyan"))
 
         return output.getvalue()
 
@@ -77,7 +79,7 @@ class TableFormatter(BaseFormatter):
                 table = self._create_list_table(tool_result, "Tool Result")
                 console.print(table)
             else:
-                console.print(Panel(str(tool_result), title="Tool Result", border_style="green"))
+                console.print(Panel(str(tool_result), title="🔧 Tool Result", border_style="green"))
         else:
             # Show full result
             table = self._create_dict_table(result, "Tool Execution")
@@ -95,7 +97,7 @@ class TableFormatter(BaseFormatter):
             if isinstance(contents, list) and contents:
                 # Multiple content items
                 for i, content in enumerate(contents):
-                    title = f"Resource Content {i+1}"
+                    title = f"📄 Resource Content {i+1}"
                     if "uri" in content:
                         title += f" ({content['uri']})"
 
@@ -106,7 +108,7 @@ class TableFormatter(BaseFormatter):
             else:
                 # Single content or empty
                 content_panel = self._create_content_panel(contents[0] if contents else {})
-                console.print(Panel(content_panel, title="Resource Content", border_style="cyan"))
+                console.print(Panel(content_panel, title="📄 Resource Content", border_style="cyan"))
         else:
             # Show full result
             table = self._create_dict_table(result, "Resource Result")
@@ -127,7 +129,7 @@ class TableFormatter(BaseFormatter):
         if error_details.get('details'):
             error_text += f"\n\n[dim]Details:[/dim]\n{safe_json_dumps(error_details['details'], pretty=True)}"
 
-        console.print(Panel(error_text, title="Error", border_style="red"))
+        console.print(Panel(error_text, title="❌ Error", border_style="red"))
         return output.getvalue()
 
     def _create_server_info_panel(self, server_info: Dict[str, Any], capabilities: Dict[str, Any], version_info: Dict[str, Any] = None) -> Panel:
@@ -136,46 +138,50 @@ class TableFormatter(BaseFormatter):
 
         # Version Information (show first if available)
         if version_info and version_info.get("status") != "not_detected":
-            info_text += "[bold cyan]MCP Version Information[/bold cyan]\n"
+            info_text += "[bold cyan]🔧 MCP Version Information[/bold cyan]\n"
             
             protocol_version = version_info.get("protocol_version", "unknown")
             spec_version = version_info.get("specification_version", "unknown")
             compatibility = version_info.get("compatibility", "unknown")
             confidence = version_info.get("confidence", "0%")
             
-            # Color-code compatibility status
+            # Color-code compatibility status with emojis
             if compatibility == "fully_compatible":
                 compat_color = "green"
+                compat_emoji = "✅"
             elif compatibility == "mostly_compatible":
                 compat_color = "yellow"
+                compat_emoji = "⚠️"
             elif compatibility == "partially_compatible":
                 compat_color = "orange"
+                compat_emoji = "🟡"
             else:
                 compat_color = "red"
+                compat_emoji = "❌"
                 
-            info_text += f"  Protocol Version: [bold]{protocol_version}[/bold]\n"
-            info_text += f"  Specification Version: [bold]{spec_version}[/bold]\n"
-            info_text += f"  Compatibility: [{compat_color}]{compatibility}[/{compat_color}]\n"
-            info_text += f"  Detection Confidence: {confidence}\n"
-            info_text += f"  Detection Method: {version_info.get('detection_method', 'unknown')}\n"
+            info_text += f"  📋 Protocol Version: [bold bright_blue]{protocol_version}[/bold bright_blue]\n"
+            info_text += f"  📜 Specification Version: [bold bright_magenta]{spec_version}[/bold bright_magenta]\n"
+            info_text += f"  {compat_emoji} Compatibility: [{compat_color}]{compatibility}[/{compat_color}]\n"
+            info_text += f"  🎯 Detection Confidence: [bold bright_green]{confidence}[/bold bright_green]\n"
+            info_text += f"  🔍 Detection Method: [dim]{version_info.get('detection_method', 'unknown')}[/dim]\n"
             
             # Show supported features count
             feature_count = version_info.get("supported_features", 0)
-            info_text += f"  Supported Features: {feature_count}\n"
+            info_text += f"  ⚡ Supported Features: [bold bright_cyan]{feature_count}[/bold bright_cyan]\n"
             info_text += "\n"
 
         # Server Information
         if server_info:
-            info_text += "[bold]Server Information[/bold]\n"
+            info_text += "[bold bright_blue]🖥️  Server Information[/bold bright_blue]\n"
             for key, value in server_info.items():
                 # Skip version_info as we already displayed it above
                 if key != "version_info":
-                    info_text += f"  {key}: {value}\n"
+                    info_text += f"  📍 {key}: [bright_yellow]{value}[/bright_yellow]\n"
             info_text += "\n"
 
         # Capabilities Summary
         if capabilities:
-            info_text += "[bold]Capabilities Summary[/bold]\n"
+            info_text += "[bold bright_green]⚡ Capabilities Summary[/bold bright_green]\n"
             capability_count = 0
             for key, value in capabilities.items():
                 if isinstance(value, dict):
@@ -183,30 +189,30 @@ class TableFormatter(BaseFormatter):
                 elif value:
                     capability_count += 1
                     
-            info_text += f"  Total Capabilities: {len(capabilities)}\n"
+            info_text += f"  📊 Total Capabilities: [bold bright_cyan]{len(capabilities)}[/bold bright_cyan]\n"
             for key, value in capabilities.items():
                 if isinstance(value, dict) and value:
-                    info_text += f"  {key}: {len(value)} items\n"
+                    info_text += f"  🔧 {key}: [bold green]{len(value)} items[/bold green]\n"
                 elif value:
-                    info_text += f"  {key}: enabled\n"
+                    info_text += f"  ✅ {key}: [bold green]enabled[/bold green]\n"
 
-        return Panel(info_text.strip(), title="Server Info", border_style="blue")
+        return Panel(info_text.strip(), title="🖥️  Server Info", border_style="blue")
 
     def _create_tools_table(self, tools: List, verbosity: int) -> Table:
         """Create tools table based on verbosity level."""
         table = Table(box=box.ROUNDED)
 
         # Add columns based on verbosity
-        table.add_column("Name", style="bold blue")
+        table.add_column("🔧 Name", style="bold bright_blue")
 
         if verbosity >= 1:
-            table.add_column("Description", style="dim")
+            table.add_column("📝 Description", style="bright_white")
 
         if verbosity >= 2:
-            table.add_column("Parameters", style="green")
+            table.add_column("⚙️  Parameters", style="bright_green")
 
         if verbosity >= 3:
-            table.add_column("Schema", style="yellow")
+            table.add_column("📋 Schema", style="bright_yellow")
 
         # Add rows
         for tool in tools:
@@ -232,17 +238,17 @@ class TableFormatter(BaseFormatter):
         """Create resources table based on verbosity level."""
         table = Table(box=box.ROUNDED)
 
-        table.add_column("URI", style="bold cyan")
+        table.add_column("🔗 URI", style="bold bright_cyan")
 
         if verbosity >= 1:
-            table.add_column("Name", style="blue")
-            table.add_column("Description", style="dim")
+            table.add_column("📄 Name", style="bright_blue")
+            table.add_column("📝 Description", style="bright_white")
 
         if verbosity >= 2:
-            table.add_column("MIME Type", style="green")
+            table.add_column("🎭 MIME Type", style="bright_green")
 
         if verbosity >= 3:
-            table.add_column("Metadata", style="yellow")
+            table.add_column("📊 Metadata", style="bright_yellow")
 
         for resource in resources:
             row = [resource.uri]
@@ -267,16 +273,16 @@ class TableFormatter(BaseFormatter):
         """Create prompts table based on verbosity level."""
         table = Table(box=box.ROUNDED)
 
-        table.add_column("Name", style="bold magenta")
+        table.add_column("💬 Name", style="bold bright_magenta")
 
         if verbosity >= 1:
-            table.add_column("Description", style="dim")
+            table.add_column("📝 Description", style="bright_white")
 
         if verbosity >= 2:
-            table.add_column("Parameters", style="green")
+            table.add_column("⚙️  Parameters", style="bright_green")
 
         if verbosity >= 3:
-            table.add_column("Schema", style="yellow")
+            table.add_column("📋 Schema", style="bright_yellow")
 
         for prompt in prompts:
             row = [prompt.name]
