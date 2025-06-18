@@ -27,7 +27,7 @@ class TableFormatter(BaseFormatter):
         console = Console(file=output, width=120)
 
         # Server Information Panel
-        server_panel = self._create_server_info_panel(result.server_info, result.capabilities)
+        server_panel = self._create_server_info_panel(result.server_info, result.capabilities, result.version_info)
         console.print(server_panel)
         console.print()
 
@@ -124,20 +124,65 @@ class TableFormatter(BaseFormatter):
         console.print(Panel(error_text, title="Error", border_style="red"))
         return output.getvalue()
 
-    def _create_server_info_panel(self, server_info: Dict[str, Any], capabilities: Dict[str, Any]) -> Panel:
+    def _create_server_info_panel(self, server_info: Dict[str, Any], capabilities: Dict[str, Any], version_info: Dict[str, Any] = None) -> Panel:
         """Create server information panel."""
         info_text = ""
 
+        # Version Information (show first if available)
+        if version_info and version_info.get("status") != "not_detected":
+            info_text += "[bold cyan]MCP Version Information[/bold cyan]\n"
+            
+            protocol_version = version_info.get("protocol_version", "unknown")
+            spec_version = version_info.get("specification_version", "unknown")
+            compatibility = version_info.get("compatibility", "unknown")
+            confidence = version_info.get("confidence", "0%")
+            
+            # Color-code compatibility status
+            if compatibility == "fully_compatible":
+                compat_color = "green"
+            elif compatibility == "mostly_compatible":
+                compat_color = "yellow"
+            elif compatibility == "partially_compatible":
+                compat_color = "orange"
+            else:
+                compat_color = "red"
+                
+            info_text += f"  Protocol Version: [bold]{protocol_version}[/bold]\n"
+            info_text += f"  Specification Version: [bold]{spec_version}[/bold]\n"
+            info_text += f"  Compatibility: [{compat_color}]{compatibility}[/{compat_color}]\n"
+            info_text += f"  Detection Confidence: {confidence}\n"
+            info_text += f"  Detection Method: {version_info.get('detection_method', 'unknown')}\n"
+            
+            # Show supported features count
+            feature_count = version_info.get("supported_features", 0)
+            info_text += f"  Supported Features: {feature_count}\n"
+            info_text += "\n"
+
+        # Server Information
         if server_info:
             info_text += "[bold]Server Information[/bold]\n"
             for key, value in server_info.items():
-                info_text += f"  {key}: {value}\n"
+                # Skip version_info as we already displayed it above
+                if key != "version_info":
+                    info_text += f"  {key}: {value}\n"
             info_text += "\n"
 
+        # Capabilities Summary
         if capabilities:
-            info_text += "[bold]Capabilities[/bold]\n"
+            info_text += "[bold]Capabilities Summary[/bold]\n"
+            capability_count = 0
             for key, value in capabilities.items():
-                info_text += f"  {key}: {value}\n"
+                if isinstance(value, dict):
+                    capability_count += len(value)
+                elif value:
+                    capability_count += 1
+                    
+            info_text += f"  Total Capabilities: {len(capabilities)}\n"
+            for key, value in capabilities.items():
+                if isinstance(value, dict) and value:
+                    info_text += f"  {key}: {len(value)} items\n"
+                elif value:
+                    info_text += f"  {key}: enabled\n"
 
         return Panel(info_text.strip(), title="Server Info", border_style="blue")
 

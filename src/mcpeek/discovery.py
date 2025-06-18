@@ -64,6 +64,13 @@ class DiscoveryEngine:
             discovered_capabilities['resources'] = {resource.uri: {'name': resource.name, 'description': resource.description} for resource in final_resources} if final_resources else {}
             discovered_capabilities['prompts'] = {prompt.name: {'description': prompt.description} for prompt in final_prompts} if final_prompts else {}
 
+            # Get version information from client
+            try:
+                version_info = self.client.get_server_version_summary()
+            except Exception as e:
+                self.logger.warning(f"Failed to get version information: {e}")
+                version_info = {"status": "detection_failed", "error": str(e)}
+
             # Create discovery result with discovered capabilities
             result = DiscoveryResult(
                 server_info=server_info,
@@ -71,7 +78,8 @@ class DiscoveryEngine:
                 resources=final_resources,
                 prompts=final_prompts,
                 capabilities=discovered_capabilities,
-                verbosity_level=self.verbosity
+                verbosity_level=self.verbosity,
+                version_info=version_info
             )
 
             self.logger.info(f"Discovery complete: {len(final_tools)} tools, {len(final_resources)} resources, {len(final_prompts)} prompts")

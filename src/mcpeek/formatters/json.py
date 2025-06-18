@@ -30,6 +30,10 @@ class JSONFormatter(BaseFormatter):
                 "verbosity_level": result.verbosity_level
             }
         }
+        
+        # Include version information if available
+        if result.version_info:
+            output["version_info"] = result.version_info
 
         return self._format_json(output)
 

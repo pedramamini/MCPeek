@@ -7,6 +7,7 @@ from .transports.base import BaseTransport
 from .utils.exceptions import ProtocolError, ConnectionError
 from .utils.logging import get_logger
 from .utils.helpers import create_request_id
+from .version_detection import MCPVersionDetector, MCPVersionInfo
 
 
 class MCPClient:
@@ -18,6 +19,9 @@ class MCPClient:
         self.logger = get_logger()
         self._initialized = False
         self._server_capabilities = {}
+        self._server_info = {}
+        self._version_info = None
+        self._version_detector = MCPVersionDetector()
         self._client_capabilities = {
             "experimental": {},
             "sampling": {},
@@ -50,10 +54,24 @@ class MCPClient:
 
             result = response["result"]
             self._server_capabilities = result.get("capabilities", {})
+            self._server_info = result.get("serverInfo", {})
 
-            # DEBUG: Log the full initialize response to diagnose capability reporting
-            self.logger.debug(f"Initialize response: {response}")
-            self.logger.debug(f"Server capabilities from initialize: {self._server_capabilities}")
+            self.logger.debug(f"Server info: {self._server_info.get('name', 'unknown')} v{self._server_info.get('version', 'unknown')}")
+            self.logger.debug(f"Server capabilities: {list(self._server_capabilities.keys())}")
+
+            # Perform version detection
+            server_info_for_detection = {
+                "protocol_version": result.get("protocolVersion", init_params["protocolVersion"]),
+                "server_name": self._server_info.get("name", "unknown"),
+                "server_version": self._server_info.get("version", "unknown")
+            }
+            
+            self._version_info = self._version_detector.detect_version(
+                server_info_for_detection,
+                self._server_capabilities
+            )
+            
+            self.logger.info(f"Detected MCP specification version: {self._version_info.specification_version}")
 
             # Send initialized notification
             await self.transport.send_notification("notifications/initialized")
@@ -256,11 +274,18 @@ class MCPClient:
         if not self._initialized:
             await self.initialize_connection()
 
-        return {
+        server_info = {
             "capabilities": self._server_capabilities,
             "protocol_version": "2024-11-05",
-            "initialized": self._initialized
+            "initialized": self._initialized,
+            "server_info": self._server_info
         }
+        
+        # Add version information if available
+        if self._version_info:
+            server_info["version_info"] = self._version_detector.get_version_summary(self._version_info)
+            
+        return server_info
 
     async def close(self) -> None:
         """Close the MCP client connection."""
@@ -302,3 +327,21 @@ class MCPClient:
     def supports_capability(self, capability: str) -> bool:
         """Check if server supports a specific capability."""
         return capability in self._server_capabilities
+
+    def get_version_info(self) -> Optional[MCPVersionInfo]:
+        """Get detected MCP version information."""
+        return self._version_info
+
+    def get_server_version_summary(self) -> Dict[str, Any]:
+        """Get a summary of server version information."""
+        if not self._version_info:
+            return {"status": "not_detected"}
+        
+        return self._version_detector.get_version_summary(self._version_info)
+
+    def is_server_compatible(self) -> bool:
+        """Check if server is compatible with this client."""
+        if not self._version_info:
+            return False
+        
+        return self._version_detector.is_compatible_with_client(self._version_info)
