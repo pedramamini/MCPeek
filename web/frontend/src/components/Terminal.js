@@ -292,13 +292,19 @@ const Terminal = () => {
     addOutput('Discovering endpoint capabilities...', 'info');
     
     try {
+      const headers = {};
+      if (currentAuth.apiKey) {
+        headers['X-API-Key'] = currentAuth.apiKey;
+      }
+      if (currentAuth.authHeader) {
+        headers['X-Auth-Header'] = currentAuth.authHeader;
+      }
+      
       const response = await axios.post('/api/discover', {
         endpoint: currentEndpoint,
-        api_key: currentAuth.apiKey || null,
-        auth_header: currentAuth.authHeader || null,
         verbosity: args.includes('-v') ? 1 : args.includes('-vv') ? 2 : args.includes('-vvv') ? 3 : 0,
         tool_tickle: args.includes('--tool-tickle')
-      });
+      }, { headers });
       
       if (response.data.success) {
         addOutput('Discovery completed successfully!', 'success');
@@ -324,18 +330,36 @@ const Terminal = () => {
     }
     
     const toolName = args[0];
-    const parameters = args.length > 1 ? JSON.parse(args.slice(1).join(' ')) : null;
+    let parameters = null;
+    
+    // Safe JSON parsing with error handling
+    if (args.length > 1) {
+      try {
+        const jsonString = args.slice(1).join(' ');
+        parameters = JSON.parse(jsonString);
+      } catch (error) {
+        addOutput(`Error: Invalid JSON parameters - ${error.message}`, 'error');
+        addOutput('Example: tool list_files {"path": "/home"}', 'info');
+        return;
+      }
+    }
     
     addOutput(`Executing tool: ${toolName}`, 'info');
     
     try {
+      const headers = {};
+      if (currentAuth.apiKey) {
+        headers['X-API-Key'] = currentAuth.apiKey;
+      }
+      if (currentAuth.authHeader) {
+        headers['X-Auth-Header'] = currentAuth.authHeader;
+      }
+      
       const response = await axios.post('/api/execute/tool', {
         endpoint: currentEndpoint,
-        api_key: currentAuth.apiKey || null,
-        auth_header: currentAuth.authHeader || null,
         tool_name: toolName,
         parameters: parameters
-      });
+      }, { headers });
       
       if (response.data.success) {
         addOutput('Tool executed successfully!', 'success');
@@ -365,12 +389,18 @@ const Terminal = () => {
     addOutput(`Reading resource: ${resourceUri}`, 'info');
     
     try {
+      const headers = {};
+      if (currentAuth.apiKey) {
+        headers['X-API-Key'] = currentAuth.apiKey;
+      }
+      if (currentAuth.authHeader) {
+        headers['X-Auth-Header'] = currentAuth.authHeader;
+      }
+      
       const response = await axios.post('/api/execute/resource', {
         endpoint: currentEndpoint,
-        api_key: currentAuth.apiKey || null,
-        auth_header: currentAuth.authHeader || null,
         resource_uri: resourceUri
-      });
+      }, { headers });
       
       if (response.data.success) {
         addOutput('Resource read successfully!', 'success');
@@ -396,18 +426,36 @@ const Terminal = () => {
     }
     
     const promptName = args[0];
-    const parameters = args.length > 1 ? JSON.parse(args.slice(1).join(' ')) : null;
+    let parameters = null;
+    
+    // Safe JSON parsing with error handling
+    if (args.length > 1) {
+      try {
+        const jsonString = args.slice(1).join(' ');
+        parameters = JSON.parse(jsonString);
+      } catch (error) {
+        addOutput(`Error: Invalid JSON parameters - ${error.message}`, 'error');
+        addOutput('Example: prompt get_summary {"text": "Hello world"}', 'info');
+        return;
+      }
+    }
     
     addOutput(`Getting prompt: ${promptName}`, 'info');
     
     try {
+      const headers = {};
+      if (currentAuth.apiKey) {
+        headers['X-API-Key'] = currentAuth.apiKey;
+      }
+      if (currentAuth.authHeader) {
+        headers['X-Auth-Header'] = currentAuth.authHeader;
+      }
+      
       const response = await axios.post('/api/execute/prompt', {
         endpoint: currentEndpoint,
-        api_key: currentAuth.apiKey || null,
-        auth_header: currentAuth.authHeader || null,
         prompt_name: promptName,
         parameters: parameters
-      });
+      }, { headers });
       
       if (response.data.success) {
         addOutput('Prompt retrieved successfully!', 'success');

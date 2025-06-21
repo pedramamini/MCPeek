@@ -21,10 +21,47 @@ const Canvas = styled.canvas`
 const MatrixRain = ({ show = true }) => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(true);
+  const [isTabActive, setIsTabActive] = useState(true);
+  
+  useEffect(() => {
+    // Visibility change detection
+    const handleVisibilityChange = () => {
+      setIsTabActive(!document.hidden);
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Intersection observer for component visibility
+    let observer;
+    if (canvasRef.current) {
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          setIsVisible(entry.isIntersecting);
+        },
+        { threshold: 0.1 }
+      );
+      observer.observe(canvasRef.current);
+    }
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (observer) observer.disconnect();
+    };
+  }, []);
   
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    
+    // Don't animate if not visible or tab not active
+    if (!show || !isVisible || !isTabActive) {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      return;
+    }
     
     const ctx = canvas.getContext('2d');
     
@@ -83,11 +120,20 @@ const MatrixRain = ({ show = true }) => {
     };
     
     const animate = () => {
+      // Check if still should animate
+      if (!show || !isVisible || !isTabActive) {
+        animationRef.current = null;
+        return;
+      }
+      
       draw();
       animationRef.current = requestAnimationFrame(animate);
     };
     
-    animate();
+    // Only start animation if visible
+    if (show && isVisible && isTabActive) {
+      animate();
+    }
     
     return () => {
       window.removeEventListener('resize', resizeCanvas);
@@ -95,7 +141,7 @@ const MatrixRain = ({ show = true }) => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, []);
+  }, [show, isVisible, isTabActive]);
   
   return (
     <CanvasContainer show={show}>
