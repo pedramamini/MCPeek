@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --matrix-green: #00ff00;
+  --dark-green: #003300;
+  --error-red: #ff0000;
+  --warning-yellow: #ffff00;
+  --info-cyan: #00ffff;
+  --black: #000000;
+  --dark-black: #001100;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  background: var(--black);
+  color: var(--matrix-green);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--matrix-green);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--dark-green);
+}
+
+/* Selection styling */
+::selection {
+  background: var(--matrix-green);
+  color: var(--black);
+}
+
+/* Global animations */
+@keyframes glow {
+  0%, 100% { text-shadow: 0 0 5px var(--matrix-green); }
+  50% { text-shadow: 0 0 20px var(--matrix-green), 0 0 30px var(--matrix-green); }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Utility classes */
+.glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.blink {
+  animation: blink 1s infinite;
+}
+
+.error {
+  color: var(--error-red);
+  text-shadow: 0 0 10px var(--error-red);
+}
+
+.success {
+  color: var(--matrix-green);
+  text-shadow: 0 0 10px var(--matrix-green);
+}
+
+.warning {
+  color: var(--warning-yellow);
+  text-shadow: 0 0 10px var(--warning-yellow);
+}
+
+.info {
+  color: var(--info-cyan);
+  text-shadow: 0 0 10px var(--info-cyan);
+}

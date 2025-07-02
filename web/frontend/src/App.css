@@ -1,0 +1,131 @@
+.App {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--black);
+  position: relative;
+}
+
+.terminal {
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid var(--matrix-green);
+  border-radius: 10px;
+  box-shadow: 0 0 20px var(--matrix-green);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.terminal-header {
+  background: var(--dark-black);
+  border-bottom: 1px solid var(--matrix-green);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+}
+
+.terminal-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.terminal-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.control-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+.control-btn.close {
+  background: var(--error-red);
+}
+
+.control-btn.minimize {
+  background: var(--warning-yellow);
+}
+
+.control-btn.maximize {
+  background: var(--matrix-green);
+}
+
+.terminal-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ascii-banner {
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.ascii-banner pre {
+  margin: 0;
+  font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+.welcome-message {
+  text-align: center;
+  line-height: 1.6;
+}
+
+.welcome-message p {
+  margin-bottom: 10px;
+}
+
+.status-bar {
+  background: var(--dark-black);
+  border-top: 1px solid var(--matrix-green);
+  padding: 8px 20px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  height: 35px;
+  align-items: center;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .terminal {
+    border-radius: 0;
+    border: none;
+    border-top: 2px solid var(--matrix-green);
+  }
+  
+  .terminal-header {
+    padding: 8px 15px;
+  }
+  
+  .terminal-title {
+    font-size: 14px;
+  }
+  
+  .terminal-body {
+    padding: 15px;
+  }
+  
+  .ascii-banner {
+    font-size: 10px;
+  }
+  
+  .status-bar {
+    padding: 8px 15px;
+    font-size: 11px;
+  }
+}
