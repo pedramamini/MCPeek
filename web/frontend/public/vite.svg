@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ff00;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#008800;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="#000000"/>
+  <text x="16" y="20" text-anchor="middle" font-family="monospace" font-size="14" font-weight="bold" fill="url(#gradient)">M</text>
+  <circle cx="8" cy="8" r="1" fill="#00ff00" opacity="0.8"/>
+  <circle cx="24" cy="8" r="1" fill="#00ff00" opacity="0.6"/>
+  <circle cx="8" cy="24" r="1" fill="#00ff00" opacity="0.4"/>
+  <circle cx="24" cy="24" r="1" fill="#00ff00" opacity="0.8"/>
+</svg>
