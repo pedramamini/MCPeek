@@ -1,0 +1,225 @@
+/* MCPeek Hacker Terminal Interface Styles */
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Fira Code', 'Share Tech Mono', 'Courier New', monospace;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.4;
+  background: #000000;
+  color: #00ff00;
+  cursor: default;
+}
+
+/* Typography */
+.mono {
+  font-family: 'Fira Code', 'Share Tech Mono', 'Courier New', monospace;
+}
+
+.glow {
+  text-shadow: 0 0 5px currentColor;
+}
+
+.glow-strong {
+  text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+}
+
+/* Scrollbars - Cyberpunk style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #001100;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00ff00;
+  border-radius: 4px;
+  box-shadow: 0 0 5px #00ff00;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00cc00;
+  box-shadow: 0 0 10px #00ff00;
+}
+
+::-webkit-scrollbar-corner {
+  background: #001100;
+}
+
+/* Selection styles */
+::selection {
+  background: #00ff0040;
+  color: #00ff00;
+}
+
+::-moz-selection {
+  background: #00ff0040;
+  color: #00ff00;
+}
+
+/* Focus styles */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 1px solid #00ff00;
+  outline-offset: 2px;
+  box-shadow: 0 0 5px #00ff0080;
+}
+
+/* Animation keyframes */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { text-shadow: 0 0 5px currentColor; }
+  50% { text-shadow: 0 0 15px currentColor, 0 0 25px currentColor; }
+}
+
+@keyframes matrix-rain {
+  0% { transform: translateY(-100vh); opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* Utility classes */
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+.glow-pulse {
+  animation: glow-pulse 3s infinite;
+}
+
+.glitch {
+  animation: glitch 0.3s infinite;
+}
+
+.hidden {
+  display: none;
+}
+
+.invisible {
+  opacity: 0;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Terminal-specific styles */
+.terminal-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: #00ff00;
+  animation: pulse 1s infinite;
+  margin-left: 2px;
+}
+
+.terminal-line {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+  word-break: break-all;
+}
+
+.terminal-prompt {
+  color: #00ff00;
+  font-weight: 600;
+  text-shadow: 0 0 5px #00ff00;
+  white-space: nowrap;
+  margin-right: 8px;
+}
+
+.terminal-input {
+  background: transparent;
+  border: none;
+  color: #00ff00;
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+  flex: 1;
+  caret-color: #00ff00;
+}
+
+.terminal-output {
+  color: #00cc00;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.terminal-error {
+  color: #ff0000;
+  text-shadow: 0 0 5px #ff0000;
+}
+
+.terminal-success {
+  color: #00ff00;
+  text-shadow: 0 0 5px #00ff00;
+}
+
+.terminal-info {
+  color: #00aaff;
+  text-shadow: 0 0 5px #00aaff;  
+}
+
+.terminal-warning {
+  color: #ffaa00;
+  text-shadow: 0 0 5px #ffaa00;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    font-size: 12px;
+  }
+  
+  .terminal-line {
+    min-height: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 11px;
+  }
+  
+  .terminal-line {
+    min-height: 16px;
+  }
+}

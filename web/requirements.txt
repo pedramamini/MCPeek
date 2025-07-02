@@ -1,0 +1,24 @@
+# MCPeek Web Interface Dependencies
+
+# Core MCPeek (install in development mode)
+# Run: pip install -e ..
+
+# FastAPI and ASGI server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Additional dependencies for web interface
+python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
+
+# CORS middleware
+fastapi-cors>=0.0.6
+
+# Environment variable management
+python-dotenv>=1.0.0
+
+# JSON handling
+orjson>=3.9.0
+
+# Async HTTP client (for MCP requests)
+httpx>=0.25.0
