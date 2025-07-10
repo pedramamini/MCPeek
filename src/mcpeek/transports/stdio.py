@@ -44,19 +44,30 @@ class STDIOTransport(BaseTransport):
             return
 
         try:
-            # Start the subprocess
+            # Get current environment and ensure PATH is set
+            import os
+            env = os.environ.copy()
+            
+            # Start the subprocess with inherited environment
             self.process = await asyncio.create_subprocess_exec(
                 *self.command,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
+                env=env,
+                cwd=os.getcwd()
             )
 
             # Start background task to read responses
             self._read_task = asyncio.create_task(self._read_responses())
+            
+            # Start background task to log stderr
+            self._stderr_task = asyncio.create_task(self._read_stderr())
 
             self._connected = True
             self.logger.info(f"Started STDIO process: {' '.join(self.command)}")
+            self.logger.debug(f"Process PID: {self.process.pid}")
+            self.logger.debug(f"Working directory: {os.getcwd()}")
 
         except Exception as e:
             await self._cleanup()
@@ -88,6 +99,23 @@ class STDIOTransport(BaseTransport):
 
         except Exception as e:
             self.logger.error(f"Error reading STDIO responses: {e}")
+    
+    async def _read_stderr(self) -> None:
+        """Background task to read and log stderr output."""
+        if not self.process or not self.process.stderr:
+            return
+        
+        try:
+            while self._connected and not self._closed:
+                line = await self.process.stderr.readline()
+                if not line:
+                    break
+                
+                line_str = line.decode('utf-8').strip()
+                if line_str:
+                    self.logger.warning(f"STDIO stderr: {line_str}")
+        except Exception as e:
+            self.logger.error(f"Error reading STDIO stderr: {e}")
 
     async def send_message(self, message: Dict[str, Any]) -> None:
         """Send JSON-RPC message via stdin."""
@@ -159,6 +187,14 @@ class STDIOTransport(BaseTransport):
             self._read_task.cancel()
             try:
                 await self._read_task
+            except asyncio.CancelledError:
+                pass
+        
+        # Cancel stderr task
+        if hasattr(self, '_stderr_task') and self._stderr_task and not self._stderr_task.done():
+            self._stderr_task.cancel()
+            try:
+                await self._stderr_task
             except asyncio.CancelledError:
                 pass
 
