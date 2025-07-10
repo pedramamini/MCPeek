@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import Terminal from './components/Terminal';
+import MCPInterface from './components/MCPInterface';
 import MatrixRain from './components/MatrixRain';
 import StatusBar from './components/StatusBar';
 
@@ -36,6 +36,39 @@ const glitch = keyframes`
   100% { transform: translate(0); }
 `;
 
+const pixelate = keyframes`
+  0%, 100% {
+    filter: blur(0) contrast(1);
+    text-shadow: 
+      0 0 10px #00ff00,
+      0 0 20px #00ff00,
+      0 0 30px #00ff00;
+  }
+  25% {
+    filter: blur(1px) contrast(1.5);
+    text-shadow: 
+      2px 2px 0 #ff0000,
+      -2px -2px 0 #00ffff,
+      0 0 30px #00ff00;
+  }
+  50% {
+    filter: blur(2px) contrast(2);
+    text-shadow: 
+      -2px 2px 0 #ff00ff,
+      2px -2px 0 #ffff00,
+      0 0 40px #00ff00;
+    transform: scale(1.02) translateX(2px);
+  }
+  75% {
+    filter: blur(0.5px) contrast(1.2);
+    text-shadow: 
+      1px 1px 0 #00ffff,
+      -1px -1px 0 #ff0000,
+      0 0 25px #00ff00;
+    transform: scale(0.98) translateX(-2px);
+  }
+`;
+
 const AppContainer = styled.div`
   height: 100vh;
   width: 100vw;
@@ -57,6 +90,35 @@ const AppContainer = styled.div`
     background-size: 3px 3px;
     pointer-events: none;
     z-index: 1;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(ellipse at center, transparent 0%, rgba(0, 255, 0, 0.03) 100%),
+      linear-gradient(to right, 
+        transparent 0%, 
+        transparent 30%, 
+        rgba(0, 255, 0, 0.01) 50%, 
+        rgba(0, 255, 0, 0.02) 70%, 
+        rgba(0, 255, 0, 0.03) 90%,
+        rgba(0, 255, 0, 0.04) 100%
+      ),
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(0, 255, 0, 0.01) 10px,
+        rgba(0, 255, 0, 0.01) 20px
+      );
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.5;
   }
 `;
 
@@ -82,14 +144,14 @@ const Header = styled(motion.header)`
 const Title = styled.h1`
   font-size: 2.5rem;
   font-weight: 700;
-  text-shadow: 
-    0 0 10px #00ff00,
-    0 0 20px #00ff00,
-    0 0 30px #00ff00;
-  animation: ${glitch} 3s infinite;
+  animation: ${pixelate} 8s ease-in-out infinite;
+  position: relative;
+  display: inline-block;
+  letter-spacing: 2px;
   
   span {
     color: #ffffff;
+    animation: ${pixelate} 8s ease-in-out infinite reverse;
   }
 `;
 
@@ -217,7 +279,7 @@ function App() {
             
             <MainContent>
               <TerminalContainer>
-                <Terminal />
+                <MCPInterface />
               </TerminalContainer>
             </MainContent>
             

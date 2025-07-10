@@ -132,7 +132,13 @@ setup_frontend() {
     
     if [ ! -d "node_modules" ] || [ "package.json" -nt "node_modules" ]; then
         echo "📦 Installing frontend dependencies..."
-        npm ci  # Use ci for faster, reliable installs
+        # Check if package-lock.json exists
+        if [ -f "package-lock.json" ]; then
+            npm ci  # Use ci for faster, reliable installs
+        else
+            echo "📦 No package-lock.json found, running npm install..."
+            npm install
+        fi
         if [ $? -ne 0 ]; then
             echo "❌ Failed to install frontend dependencies"
             exit 1

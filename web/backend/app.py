@@ -19,7 +19,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -88,7 +88,8 @@ class MCPEndpointRequest(BaseModel):
     endpoint: str = Field(..., min_length=1, max_length=2048, description="MCP endpoint URL or command")
     timeout: float = Field(30.0, ge=1.0, le=300.0, description="Connection timeout in seconds")
     
-    @validator('endpoint')
+    @field_validator('endpoint')
+    @classmethod
     def validate_endpoint(cls, v):
         # Basic validation for endpoint format
         if not v or v.isspace():
@@ -103,7 +104,8 @@ class ToolExecutionRequest(MCPEndpointRequest):
     tool_name: str = Field(..., min_length=1, max_length=256, description="Name of the tool to execute")
     parameters: Optional[Dict[str, Any]] = Field(None, description="Tool parameters")
     
-    @validator('tool_name')
+    @field_validator('tool_name')
+    @classmethod
     def validate_tool_name(cls, v):
         if not v or v.isspace():
             raise ValueError('Tool name cannot be empty')
@@ -112,7 +114,8 @@ class ToolExecutionRequest(MCPEndpointRequest):
 class ResourceRequest(MCPEndpointRequest):
     resource_uri: str = Field(..., min_length=1, max_length=2048, description="URI of the resource to read")
     
-    @validator('resource_uri')
+    @field_validator('resource_uri')
+    @classmethod
     def validate_resource_uri(cls, v):
         if not v or v.isspace():
             raise ValueError('Resource URI cannot be empty')
@@ -122,7 +125,8 @@ class PromptRequest(MCPEndpointRequest):
     prompt_name: str = Field(..., min_length=1, max_length=256, description="Name of the prompt to get")
     parameters: Optional[Dict[str, Any]] = Field(None, description="Prompt parameters")
     
-    @validator('prompt_name')
+    @field_validator('prompt_name')
+    @classmethod
     def validate_prompt_name(cls, v):
         if not v or v.isspace():
             raise ValueError('Prompt name cannot be empty')
@@ -167,6 +171,10 @@ class MCPClientManager:
             transport = HTTPTransport(request.endpoint, auth_headers, request.timeout)
         else:
             # STDIO transport
+            logger.info(f"Creating STDIO transport for: {request.endpoint}")
+            logger.info(f"Current working directory: {os.getcwd()}")
+            logger.info(f"PATH environment: {os.environ.get('PATH', 'Not set')}")
+            
             if ' ' in request.endpoint:
                 transport = STDIOTransport.from_command_string(request.endpoint, request.timeout)
             else:
